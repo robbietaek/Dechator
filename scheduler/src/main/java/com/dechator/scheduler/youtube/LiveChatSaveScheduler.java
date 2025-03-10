@@ -53,9 +53,6 @@ public class LiveChatSaveScheduler {
 
         String liveChatId = youtubeGetService.getLiveChatIdByLiveVideoId(liveVideoId);
         if (liveChatId == null) {
-          targetDao.upsertTarget(
-              Target.builder().targetId(targetId).channelId(channelId).liveVideoId(liveVideoId)
-                  .build());
           continue;
         }
         target.setLiveChatId(liveChatId);
@@ -67,7 +64,7 @@ public class LiveChatSaveScheduler {
       }
 
       LiveChatResponse liveChatResponse = youtubeGetService.getYoutubeChannelLiveChatListByLiveChatId(
-          target.getLiveChatId());
+          target.getLiveChatId(), target.getTargetId());
 
       if (ObjectUtils.isEmpty(liveChatResponse)) {
         continue;
@@ -95,6 +92,39 @@ public class LiveChatSaveScheduler {
 
       bulkInsertService.bulkInsertSnippetList(snippetsList);
       log.info("Save finish. target : {}", target.getTargetId());
+    }
+  }
+
+  @Scheduled(fixedRate = 108000000)
+  public void updateTargetByMostConcurrentViewers() {
+    List<Target> targetList = targetDao.selectTargetList();
+
+    for (Target target : targetList) {
+      String targetId = target.getTargetId();
+
+      String channelId = youtubeGetService.getChannelIdByHandle(targetId);
+      if (channelId == null) {
+        continue;
+      }
+      target.setChannelId(channelId);
+
+      String liveVideoId = youtubeGetService.getLiveVideoIdByChannelId(channelId);
+      if (liveVideoId == null) {
+        targetDao.upsertTarget(Target.builder().targetId(targetId).channelId(channelId).build());
+        continue;
+      }
+      target.setLiveVideoId(liveVideoId);
+
+      String liveChatId = youtubeGetService.getLiveChatIdByLiveVideoId(liveVideoId);
+      if (liveChatId == null) {
+        continue;
+      }
+      target.setLiveChatId(liveChatId);
+
+      targetDao.upsertTarget(
+          Target.builder().targetId(targetId).channelId(channelId).liveVideoId(liveVideoId)
+              .liveChatId(liveChatId)
+              .build());
     }
   }
 
