@@ -45,13 +45,20 @@ public class ChatService {
                         snippetList.stream().map(snippet -> snippet.getDisplayMessage()).collect(
                             Collectors.toList()))),
                 null);
-        map.put(target.getTargetId(), response.text());
+        map.put(target.getTargetId(), modifyToCleanText(response.text()));
       } catch (Exception e) {
         log.error("error : {}", e.getMessage());
       }
     });
 
     return map;
+  }
+
+  public String modifyToCleanText(String text) {
+    return text.replaceAll("\\p{C}", "")
+        .replaceAll("\\*", "")
+        .trim()
+        .replaceAll("   ", "");
   }
 
 }
