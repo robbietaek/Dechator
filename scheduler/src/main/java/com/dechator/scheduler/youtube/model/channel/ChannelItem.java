@@ -6,15 +6,18 @@ import java.io.Serializable;
 import lombok.Data;
 
 @Data
-public class ChannelId implements Serializable {
+public class ChannelItem implements Serializable {
 
   @Serial
-  private static final long serialVersionUID = 312103803137916165L;
+  private static final long serialVersionUID = 7587870041766545581L;
 
   @JsonProperty("kind")
   private String kind;
 
-  @JsonProperty("channelId")
-  private String channelId;
+  @JsonProperty("etag")
+  private String etag;
+
+  @JsonProperty("id")
+  private String id;
 
 }

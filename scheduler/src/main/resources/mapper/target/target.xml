@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dechator.scheduler.youtube.dao.target.TargetDao">
+
+  <select id="selectTargetList" resultType="com.dechator.scheduler.youtube.model.target.Target">
+    SELECT
+        target_id
+        , channel_id
+        , live_video_id
+        , live_chat_id
+        , is_target
+    FROM
+        tb_target
+    WHERE
+        is_target IS TRUE
+  </select>
+
+  <insert id="upsertTarget">
+    INSERT INTO
+        tb_target
+        (
+            target_id
+            , channel_id
+            , live_video_id
+            , live_chat_id
+        )
+    VALUES
+        (
+            #{target.targetId}
+            , #{target.channelId}
+            , #{target.liveVideoId}
+            , #{target.liveChatId}
+        )
+    ON CONFLICT (target_id)
+        DO UPDATE
+    SET channel_id = EXCLUDED.channel_id
+        , live_video_id = EXCLUDED.live_video_id
+        , live_chat_id = EXCLUDED.live_chat_id
+  </insert>
+
+</mapper>

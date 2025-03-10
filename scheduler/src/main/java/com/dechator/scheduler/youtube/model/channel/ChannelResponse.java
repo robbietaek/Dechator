@@ -12,7 +12,16 @@ public class ChannelResponse implements Serializable {
   @Serial
   private static final long serialVersionUID = -5375003471799306136L;
 
+  @JsonProperty("kind")
+  private String kind;
+
+  @JsonProperty("etag")
+  private String etag;
+
+  @JsonProperty("pageInfo")
+  private PageInfo pageInfo;
+
   @JsonProperty("items")
-  private List<Channel> items;
+  private List<ChannelItem> items;
 
 }

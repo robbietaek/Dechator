@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.dechator</groupId>
 	<artifactId>scheduler</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.2</version>
 	<name>scheduler</name>
 	<description>Data scheduler</description>
 	<url/>
@@ -36,15 +36,12 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-kafka</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
+			<groupId>org.mybatis.spring.boot</groupId>
+			<artifactId>mybatis-spring-boot-starter</artifactId>
+			<version>3.0.4</version>
 		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>

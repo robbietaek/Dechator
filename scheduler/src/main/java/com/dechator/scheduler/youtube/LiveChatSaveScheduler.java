@@ -1,13 +1,12 @@
 package com.dechator.scheduler.youtube;
 
-import com.dechator.scheduler.youtube.entity.author.Author;
-import com.dechator.scheduler.youtube.entity.author.AuthorRepository;
-import com.dechator.scheduler.youtube.entity.snippet.Snippet;
-import com.dechator.scheduler.youtube.entity.snippet.SnippetRepository;
-import com.dechator.scheduler.youtube.entity.target.Target;
-import com.dechator.scheduler.youtube.entity.target.TargetRepository;
+import com.dechator.scheduler.youtube.dao.target.TargetDao;
+import com.dechator.scheduler.youtube.model.author.Author;
 import com.dechator.scheduler.youtube.model.chat.LiveChatMessage;
 import com.dechator.scheduler.youtube.model.chat.LiveChatResponse;
+import com.dechator.scheduler.youtube.model.snippet.Snippet;
+import com.dechator.scheduler.youtube.model.target.Target;
+import com.dechator.scheduler.youtube.service.BulkInsertService;
 import com.dechator.scheduler.youtube.service.YoutubeGetService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.OffsetDateTime;
@@ -18,6 +17,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ObjectUtils;
 
 @Slf4j
 @Service
@@ -25,14 +25,13 @@ import org.springframework.stereotype.Service;
 public class LiveChatSaveScheduler {
 
   private final YoutubeGetService youtubeGetService;
-  private final AuthorRepository authorRepository;
-  private final TargetRepository targetRepository;
-  private final SnippetRepository snippetRepository;
+  private final BulkInsertService bulkInsertService;
+  private final TargetDao targetDao;
   private ObjectMapper objectMapper = new ObjectMapper();
 
-  @Scheduled(fixedDelay = 20000)
+  @Scheduled(fixedRate = 35000)
   public void saveLiveChatMessages() {
-    List<Target> targetList = targetRepository.findAll();
+    List<Target> targetList = targetDao.selectTargetList();
 
     for (Target target : targetList) {
       if (target.getChannelId() == null || target.getLiveVideoId() == null
@@ -43,45 +42,60 @@ public class LiveChatSaveScheduler {
         if (channelId == null) {
           continue;
         }
+        target.setChannelId(channelId);
 
         String liveVideoId = youtubeGetService.getLiveVideoIdByChannelId(channelId);
         if (liveVideoId == null) {
+          targetDao.upsertTarget(Target.builder().targetId(targetId).channelId(channelId).build());
           continue;
         }
+        target.setLiveVideoId(liveVideoId);
 
         String liveChatId = youtubeGetService.getLiveChatIdByLiveVideoId(liveVideoId);
         if (liveChatId == null) {
+          targetDao.upsertTarget(
+              Target.builder().targetId(targetId).channelId(channelId).liveVideoId(liveVideoId)
+                  .build());
           continue;
         }
+        target.setLiveChatId(liveChatId);
 
-        target.updateTarget(targetId, channelId, liveVideoId, liveChatId);
-        targetRepository.save(target);
+        targetDao.upsertTarget(
+            Target.builder().targetId(targetId).channelId(channelId).liveVideoId(liveVideoId)
+                .liveChatId(liveChatId)
+                .build());
       }
 
       LiveChatResponse liveChatResponse = youtubeGetService.getYoutubeChannelLiveChatListByLiveChatId(
           target.getLiveChatId());
 
+      if (ObjectUtils.isEmpty(liveChatResponse)) {
+        continue;
+      }
+
       List<Author> authorList = liveChatResponse.getItems().stream()
           .map(item -> objectMapper.convertValue(item.getAuthorDetails(), Author.class))
           .collect(Collectors.toList());
-      authorRepository.saveAll(authorList);
+      bulkInsertService.bulkInsertAuthorList(authorList);
 
       List<Snippet> snippetsList = new ArrayList<>();
       for (LiveChatMessage liveChatMessage : liveChatResponse.getItems()) {
         OffsetDateTime publishedAt = OffsetDateTime.parse(
             liveChatMessage.getSnippet().getPublishedAt());
 
-        snippetsList.add(new Snippet(liveChatMessage.getId(), target.getTargetId(),
-            liveChatMessage.getSnippet().getType(),
-            liveChatMessage.getSnippet().getAuthorChannelId(),
-            publishedAt,
-            liveChatMessage.getSnippet().getHasDisplayContent(),
-            liveChatMessage.getSnippet().getDisplayMessage()));
+        snippetsList.add(
+            Snippet.builder().id(liveChatMessage.getId()).targetId(target.getTargetId())
+                .type(liveChatMessage.getSnippet().getType())
+                .authorChannelId(liveChatMessage.getSnippet().getAuthorChannelId())
+                .publishedAt(publishedAt)
+                .hasDisplayContent(liveChatMessage.getSnippet().getHasDisplayContent())
+                .displayMessage(
+                    liveChatMessage.getSnippet().getTextMessageDetails().getMessageText()).build());
       }
 
-      snippetRepository.saveAll(snippetsList);
+      bulkInsertService.bulkInsertSnippetList(snippetsList);
+      log.info("Save finish. target : {}", target.getTargetId());
     }
-    log.info("FINISH");
   }
 
 }
