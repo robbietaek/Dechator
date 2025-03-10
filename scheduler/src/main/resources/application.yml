@@ -1,19 +1,31 @@
+server:
+  port: 8888
+
+logging:
+  level:
+    org:
+      springframework:
+        boot:
+          # 오류만 출력
+          autoconfigure: ERROR
+
 spring:
   application:
     name: scheduler
 
   ## PostgreSQL 설정
   datasource:
-    url: jdbc:postgresql://localhost:5432/
-    username:
-    password:
+    jdbc-url: jdbc:postgresql://localhost:5432/dechator
     driver-class-name: org.postgresql.Driver
-
-  jpa:
-    properties:
-      hibernate.jdbc.time_zone: UTC
-    hibernate:
-      ddl-auto: update
-
-google:
-  apiKey: ""
+    username: dechator
+    password: ''
+    show-sql: true
+    connection-test-query: SELECT 1
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      poolName: HikariCP
+      minimumIdle: 5
+      maximumPoolSize: 50
+      idleTimeout: 30000
+      maxLifetime: 2000000
+      connectionTimeout: 30000

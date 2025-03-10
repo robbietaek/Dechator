@@ -1,13 +1,16 @@
 package com.dechator.scheduler.youtube.service;
 
+import com.dechator.scheduler.youtube.access.ApiKey;
 import com.dechator.scheduler.youtube.model.channel.ChannelResponse;
 import com.dechator.scheduler.youtube.model.chat.LiveChatResponse;
+import com.dechator.scheduler.youtube.model.live_stream.VideoItem;
+import com.dechator.scheduler.youtube.model.live_stream.VideoResponse;
 import com.dechator.scheduler.youtube.model.search.SearchResponse;
-import com.dechator.scheduler.youtube.model.video.VideoResponse;
 import java.net.URI;
+import java.util.Comparator;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -20,23 +23,15 @@ public class YoutubeGetService {
 
   private final RestTemplate restTemplate;
 
-  private static String apiKey;
-
-  @Value("${google.apiKey}")
-  public void setApiKey(String apiKey) {
-    this.apiKey = apiKey;
-  }
-
   public String getChannelIdByHandle(String handle) {
     ChannelResponse channelResponse = new ChannelResponse();
     try {
       URI uri = UriComponentsBuilder
           .fromUriString("https://www.googleapis.com")
-          .path("/youtube/v3/search")
-          .queryParam("part", "snippet")
-          .queryParam("type", "channel")
-          .queryParam("q", handle)
-          .queryParam("key", apiKey)
+          .path("/youtube/v3/channels")
+          .queryParam("part", "id")
+          .queryParam("forHandle", handle)
+          .queryParam("key", ApiKey.getRandomApiKey())
           .encode()
           .build()
           .toUri();
@@ -44,61 +39,97 @@ public class YoutubeGetService {
           ChannelResponse.class);
       channelResponse = responseEntity.getBody();
     } catch (Exception e) {
-      e.printStackTrace();
-    }
-
-    if (channelResponse == null || channelResponse.getItems().isEmpty()) {
+      log.error(e.getMessage());
       return null;
     }
 
-    return channelResponse.getItems().get(0).getId().getChannelId();
+    if (channelResponse == null || channelResponse.getPageInfo().getTotalResults() == 0) {
+      return null;
+    }
+
+    return channelResponse.getItems().get(0).getId();
   }
 
   public String getLiveVideoIdByChannelId(String channelId) {
     SearchResponse searchResponse = new SearchResponse();
     try {
-      URI uri = UriComponentsBuilder
+      URI searchUri = UriComponentsBuilder
           .fromUriString("https://www.googleapis.com")
           .path("/youtube/v3/search")
           .queryParam("part", "id")
           .queryParam("channelId", channelId)
           .queryParam("type", "video")
           .queryParam("eventType", "live")
-          .queryParam("key", apiKey)
+          .queryParam("key", ApiKey.getRandomApiKey())
           .encode()
           .build()
           .toUri();
-      ResponseEntity<SearchResponse> responseEntity = restTemplate.getForEntity(uri,
+      ResponseEntity<SearchResponse> responseEntity = restTemplate.getForEntity(searchUri,
           SearchResponse.class);
       searchResponse = responseEntity.getBody();
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error(e.getMessage());
+      return null;
     }
 
     if (searchResponse.getPageInfo().getTotalResults() == 0) {
       return null;
     }
 
-    return searchResponse.getItems().get(0).getId().getVideoId();
+    VideoResponse videoResponse = new VideoResponse();
+    try {
+      URI videosUri = UriComponentsBuilder
+          .fromUriString("https://www.googleapis.com")
+          .path("/youtube/v3/videos")
+          .queryParam("part", "snippet,liveStreamingDetails")
+          .queryParam("id",
+              String.join(",",
+                  searchResponse.getItems().stream().map(item -> item.getId().getVideoId()).collect(
+                      Collectors.toList())))
+          .queryParam("key", ApiKey.getRandomApiKey())
+          .encode()
+          .build()
+          .toUri();
+      ResponseEntity<VideoResponse> responseEntity = restTemplate.getForEntity(videosUri,
+          VideoResponse.class);
+      videoResponse = responseEntity.getBody();
+    } catch (Exception e) {
+      log.error(e.getMessage());
+      return null;
+    }
+
+    return videoResponse.getItems().stream()
+        .sorted(Comparator.comparingLong(this::getViewerCount).reversed())
+        .collect(Collectors.toList()).get(0).getId();
+  }
+
+  private long getViewerCount(VideoItem item) {
+    if (item.getLiveStreamingDetails() != null
+        && item.getLiveStreamingDetails().getConcurrentViewers() != null) {
+      return Long.parseLong(item.getLiveStreamingDetails().getConcurrentViewers());
+    }
+    return 0;
   }
 
   public String getLiveChatIdByLiveVideoId(String videoId) {
-    VideoResponse videoResponse = new VideoResponse();
+    com.dechator.scheduler.youtube.model.video.VideoResponse videoResponse = new com.dechator.scheduler.youtube.model.video.VideoResponse();
     try {
       URI uri = UriComponentsBuilder
           .fromUriString("https://www.googleapis.com")
           .path("/youtube/v3/videos")
           .queryParam("id", videoId)
           .queryParam("part", "liveStreamingDetails")
-          .queryParam("key", apiKey)
+          .queryParam("key", ApiKey.getRandomApiKey())
           .encode()
           .build()
           .toUri();
-      ResponseEntity<VideoResponse> responseEntity = restTemplate.getForEntity(uri,
-          VideoResponse.class);
+      ResponseEntity<com.dechator.scheduler.youtube.model.video.VideoResponse> responseEntity = restTemplate.getForEntity(
+          uri,
+          com.dechator.scheduler.youtube.model.video.VideoResponse.class);
       videoResponse = responseEntity.getBody();
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error(e.getMessage());
+      return null;
     }
 
     if (videoResponse.getPageInfo().getTotalResults() == 0) {
@@ -116,7 +147,7 @@ public class YoutubeGetService {
           .path("/youtube/v3/liveChat/messages")
           .queryParam("liveChatId", liveChatId)
           .queryParam("part", "snippet,authorDetails")
-          .queryParam("key", apiKey)
+          .queryParam("key", ApiKey.getRandomApiKey())
           .encode()
           .build()
           .toUri();
@@ -124,7 +155,8 @@ public class YoutubeGetService {
           LiveChatResponse.class);
       liveChatResponse = responseEntity.getBody();
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error(e.getMessage());
+      return null;
     }
 
     if (liveChatResponse.getPageInfo().getTotalResults() == 0) {
@@ -132,25 +164,6 @@ public class YoutubeGetService {
     }
 
     return liveChatResponse;
-  }
-
-  public LiveChatResponse getYoutubeChannelLiveChatByUserName(String userName) {
-    String channelId = getChannelIdByHandle(userName);
-    if (channelId == null) {
-      return null;
-    }
-
-    String liveVideoId = getLiveVideoIdByChannelId(channelId);
-    if (liveVideoId == null) {
-      return null;
-    }
-
-    String liveChatId = getLiveChatIdByLiveVideoId(liveVideoId);
-    if (liveChatId == null) {
-      return null;
-    }
-
-    return getYoutubeChannelLiveChatListByLiveChatId(liveChatId);
   }
 
 }
