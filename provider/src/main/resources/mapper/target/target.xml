@@ -12,6 +12,23 @@
         , is_target
     FROM
         tb_target
+    WHERE
+        is_target IS TRUE
+  </select>
+
+  <select id="selectTargetByTargetId" resultType="com.dechator.provider.youtube.model.target.Target">
+    SELECT
+        target_id
+        , channel_id
+        , live_video_id
+        , live_chat_id
+        , is_target
+    FROM
+        tb_target
+    WHERE
+        target_id = #{targetId}
+    AND
+        is_target IS TRUE
   </select>
 
 </mapper>

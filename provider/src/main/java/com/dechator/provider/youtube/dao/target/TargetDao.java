@@ -8,5 +8,7 @@ import org.apache.ibatis.annotations.Mapper;
 public interface TargetDao {
 
   List<Target> selectTargetList();
-  
+
+  Target selectTargetByTargetId(String targetId);
+
 }
