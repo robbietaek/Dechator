@@ -29,7 +29,7 @@ public class LiveChatSaveScheduler {
   private final TargetDao targetDao;
   private ObjectMapper objectMapper = new ObjectMapper();
 
-  @Scheduled(fixedRate = 35000)
+  @Scheduled(fixedDelay = 30000)
   public void saveLiveChatMessages() {
     List<Target> targetList = targetDao.selectTargetList();
 
@@ -91,7 +91,6 @@ public class LiveChatSaveScheduler {
       }
 
       bulkInsertService.bulkInsertSnippetList(snippetsList);
-      log.info("Save finish. target : {}", target.getTargetId());
     }
   }
 
