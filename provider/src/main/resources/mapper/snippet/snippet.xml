@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.dechator.provider.youtube.dao.snippet.SnippetDao">
+
+  <select id="selectSnippetListByTargetId" resultType="com.dechator.provider.youtube.model.snippet.Snippet">
+    SELECT
+        id
+        , author_channel_id
+        , display_message
+        , has_display_content
+        , published_at
+        , target_id
+        , type
+    FROM
+        tb_chat
+    WHERE
+        target_id = #{targetId}
+    ORDER BY
+        published_at DESC
+    LIMIT
+        1000
+  </select>
+
+</mapper>

@@ -1,11 +1,13 @@
 package com.dechator.scheduler.youtube.service;
 
 import com.dechator.scheduler.youtube.access.ApiKey;
+import com.dechator.scheduler.youtube.dao.target.TargetDao;
 import com.dechator.scheduler.youtube.model.channel.ChannelResponse;
 import com.dechator.scheduler.youtube.model.chat.LiveChatResponse;
 import com.dechator.scheduler.youtube.model.live_stream.VideoItem;
 import com.dechator.scheduler.youtube.model.live_stream.VideoResponse;
 import com.dechator.scheduler.youtube.model.search.SearchResponse;
+import com.dechator.scheduler.youtube.model.target.Target;
 import java.net.URI;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class YoutubeGetService {
 
   private final RestTemplate restTemplate;
+  private final TargetDao targetDao;
 
   public String getChannelIdByHandle(String handle) {
     ChannelResponse channelResponse = new ChannelResponse();
@@ -139,7 +142,8 @@ public class YoutubeGetService {
     return videoResponse.getItems().get(0).getLiveStreamingDetails().getActiveLiveChatId();
   }
 
-  public LiveChatResponse getYoutubeChannelLiveChatListByLiveChatId(String liveChatId) {
+  public LiveChatResponse getYoutubeChannelLiveChatListByLiveChatId(String liveChatId,
+      String targetId) {
     LiveChatResponse liveChatResponse = new LiveChatResponse();
     try {
       URI uri = UriComponentsBuilder
@@ -156,10 +160,11 @@ public class YoutubeGetService {
       liveChatResponse = responseEntity.getBody();
     } catch (Exception e) {
       log.error(e.getMessage());
+      targetDao.upsertTarget(Target.builder().targetId(targetId).build());
       return null;
     }
 
-    if (liveChatResponse.getPageInfo().getTotalResults() == 0) {
+    if (liveChatResponse == null || liveChatResponse.getPageInfo().getTotalResults() == 0) {
       return null;
     }
 
