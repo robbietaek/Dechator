@@ -1,6 +1,8 @@
 package com.dechator.provider.youtube.service;
 
 import com.dechator.provider.ai.gemini.service.GeminiService;
+import com.dechator.provider.prompt.model.news.NewsSummary;
+import com.dechator.provider.prompt.model.politics.PoliticsSummary;
 import com.dechator.provider.youtube.dao.snippet.SnippetDao;
 import com.dechator.provider.youtube.dao.target.TargetDao;
 import com.dechator.provider.youtube.model.snippet.Snippet;
@@ -22,8 +24,8 @@ public class ChatService {
   private final SnippetDao snippetDao;
   private final TargetDao targetDao;
 
-  public Map<String, String> getNewsChatSummaryList() {
-    Map<String, String> map = new HashMap<>();
+  public Map<String, NewsSummary> getNewsChatSummaryList() {
+    Map<String, NewsSummary> map = new HashMap<>();
     List<Target> targetList = targetDao.selectTargetList();
 
     targetList.parallelStream().forEach(target -> {
@@ -38,8 +40,8 @@ public class ChatService {
     return map;
   }
 
-  public Map<String, String> getNewsChatSummaryByTargetId(String targetId) {
-    Map<String, String> map = new HashMap<>();
+  public Map<String, NewsSummary> getNewsChatSummaryByTargetId(String targetId) {
+    Map<String, NewsSummary> map = new HashMap<>();
     Target target = targetDao.selectTargetByTargetId(targetId);
 
     List<Snippet> snippetList = snippetDao.selectSnippetListByTargetId(target.getTargetId());
@@ -52,8 +54,8 @@ public class ChatService {
     return map;
   }
 
-  public Map<String, String> getPoliticsChatSummaryList() {
-    Map<String, String> map = new HashMap<>();
+  public Map<String, PoliticsSummary> getPoliticsChatSummaryList() {
+    Map<String, PoliticsSummary> map = new HashMap<>();
     List<Target> targetList = targetDao.selectTargetList();
 
     targetList.parallelStream().forEach(target -> {
@@ -68,8 +70,8 @@ public class ChatService {
     return map;
   }
 
-  public Map<String, String> getPoliticsChatSummaryByTargetId(String targetId) {
-    Map<String, String> map = new HashMap<>();
+  public Map<String, PoliticsSummary> getPoliticsChatSummaryByTargetId(String targetId) {
+    Map<String, PoliticsSummary> map = new HashMap<>();
     Target target = targetDao.selectTargetByTargetId(targetId);
 
     List<Snippet> snippetList = snippetDao.selectSnippetListByTargetId(target.getTargetId());

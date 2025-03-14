@@ -1,11 +1,18 @@
 package com.dechator.provider.ai.gemini.service;
 
 import com.dechator.provider.prompt.dao.PromptDao;
+import com.dechator.provider.prompt.model.news.NewsSummary;
+import com.dechator.provider.prompt.model.politics.PoliticsSummary;
+import com.dechator.provider.prompt.model.prompt.Prompt;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.text.TextContentRenderer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,22 +24,29 @@ public class GeminiService {
   private final PromptDao promptDao;
   private static String geminiApiKey;
 
+  private ObjectMapper objectMapper = new ObjectMapper();
+
   @Value("${google.gemimiApiKey}")
   public void setGeminiApiKey(String geminiApiKey) {
     this.geminiApiKey = geminiApiKey;
   }
 
-  public String getGeminiNewsResponse(String targetId, List<String> requestList) {
-    String result = null;
+  public NewsSummary getGeminiNewsResponse(String targetId, List<String> requestList) {
+    NewsSummary result = null;
     Client client = Client.builder().apiKey(geminiApiKey).build();
 
     try {
+      Prompt prompt = promptDao.selectPromptByPromptType("CHAT_NEWS");
       GenerateContentResponse response =
           client.models.generateContent("gemini-2.0-flash-001", String.format(
-                  promptDao.selectPromptTextByPromptType("CHAT_NEWS"), targetId,
+                  prompt.getPromptText(), targetId, prompt.getPromptJson(),
                   String.join(", ", requestList)),
               null);
-      result = modifyToCleanText(response.text());
+      Parser parser = Parser.builder().build();
+      Node document = parser.parse(response.text());
+      TextContentRenderer renderer = TextContentRenderer.builder().build();
+      String responseJson = renderer.render(document).trim();
+      result = objectMapper.readValue(responseJson, NewsSummary.class);
     } catch (Exception e) {
       log.error("error : {}", e.getMessage());
     }
@@ -40,29 +54,29 @@ public class GeminiService {
     return result;
   }
 
-  public String getGeminiPoliticsResponse(String targetId, List<String> requestList) {
-    String result = null;
+  public PoliticsSummary getGeminiPoliticsResponse(String targetId, List<String> requestList) {
+    PoliticsSummary politicsSummary = null;
     Client client = Client.builder().apiKey(geminiApiKey).build();
 
     try {
+      Prompt prompt = promptDao.selectPromptByPromptType("CHAT_POLITICS");
       GenerateContentResponse response =
           client.models.generateContent("gemini-2.0-flash-001", String.format(
-                  promptDao.selectPromptTextByPromptType("CHAT_POLITICS"), targetId,
+                  prompt.getPromptText(), targetId,
+                  prompt.getPromptJson(),
                   String.join(", ", requestList)),
               null);
-      result = modifyToCleanText(response.text());
+
+      Parser parser = Parser.builder().build();
+      Node document = parser.parse(response.text());
+      TextContentRenderer renderer = TextContentRenderer.builder().build();
+      String responseJson = renderer.render(document).trim();
+      politicsSummary = objectMapper.readValue(responseJson, PoliticsSummary.class);
     } catch (Exception e) {
       log.error("error : {}", e.getMessage());
     }
 
-    return result;
-  }
-
-  private String modifyToCleanText(String text) {
-    return text.replaceAll("\\p{C}", "")
-        .replaceAll("\\*", "")
-        .trim()
-        .replaceAll("   ", "");
+    return politicsSummary;
   }
 
 }

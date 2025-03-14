@@ -1,4 +1,4 @@
-package com.dechator.provider.prompt.model;
+package com.dechator.provider.prompt.model.prompt;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -12,5 +12,6 @@ public class Prompt implements Serializable {
 
   private String promptType;
   private String promptText;
+  private String promptJson;
 
 }

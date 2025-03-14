@@ -3,9 +3,11 @@
   "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.dechator.provider.prompt.dao.PromptDao">
 
-  <select id="selectPromptTextByPromptType" resultType="String">
+  <select id="selectPromptByPromptType" resultType="com.dechator.provider.prompt.model.prompt.Prompt">
     SELECT
-        prompt_text
+        prompt_type
+        , prompt_text
+        , prompt_json
     FROM
         tb_prompt
     WHERE

@@ -1,5 +1,7 @@
 package com.dechator.provider.youtube.controller;
 
+import com.dechator.provider.prompt.model.news.NewsSummary;
+import com.dechator.provider.prompt.model.politics.PoliticsSummary;
 import com.dechator.provider.youtube.service.ChatService;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -20,26 +22,26 @@ public class ChatController {
   private final ChatService chatService;
 
   @GetMapping("/news/summary")
-  public ResponseEntity<Map<String, String>> getNewsChatSummaryList() {
+  public ResponseEntity<Map<String, NewsSummary>> getNewsChatSummaryList() {
     return ResponseEntity.status(HttpStatus.OK)
         .body(chatService.getNewsChatSummaryList());
   }
 
   @GetMapping("/news/summary/target/{targetId}")
-  public ResponseEntity<Map<String, String>> getNewsChatSummaryByTargetId(
+  public ResponseEntity<Map<String, NewsSummary>> getNewsChatSummaryByTargetId(
       @PathVariable String targetId) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(chatService.getNewsChatSummaryByTargetId(targetId));
   }
 
   @GetMapping("/politics/summary")
-  public ResponseEntity<Map<String, String>> getPoliticsChatSummaryList() {
+  public ResponseEntity<Map<String, PoliticsSummary>> getPoliticsChatSummaryList() {
     return ResponseEntity.status(HttpStatus.OK)
         .body(chatService.getPoliticsChatSummaryList());
   }
 
   @GetMapping("/politics/summary/target/{targetId}")
-  public ResponseEntity<Map<String, String>> getPoliticsChatSummaryByTargetId(
+  public ResponseEntity<Map<String, PoliticsSummary>> getPoliticsChatSummaryByTargetId(
       @PathVariable String targetId) {
     return ResponseEntity.status(HttpStatus.OK)
         .body(chatService.getPoliticsChatSummaryByTargetId(targetId));

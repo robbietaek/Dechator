@@ -10,7 +10,7 @@
 	</parent>
 	<groupId>com.dechator</groupId>
 	<artifactId>provider</artifactId>
-	<version>1.0.2</version>
+	<version>1.0.3</version>
 	<name>provider</name>
 	<description>API provide server</description>
 	<url/>
@@ -53,6 +53,11 @@
 			<groupId>com.google.genai</groupId>
 			<artifactId>google-genai</artifactId>
 			<version>0.2.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.commonmark</groupId>
+			<artifactId>commonmark</artifactId>
+			<version>0.24.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.projectlombok</groupId>
